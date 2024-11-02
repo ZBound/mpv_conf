@@ -1,26 +1,34 @@
 # uosc_danmaku
 在MPV播放器中加载弹弹play弹幕，基于 uosc UI框架和弹弹play API的mpv弹幕扩展插件
+> [!NOTE]
+> 
+> 已添加对mpv内部`mp.input`的支持，在uosc不可用时通过键绑定调用此方式渲染菜单
+> 
+> 欲启用此支持mpv最低版本要求：0.39.0
 
 ## 项目简介
 
 插件具体效果见演示视频：
 
-https://github.com/user-attachments/assets/86717e75-9176-4f1a-88cd-71fa94da0c0e
+<video width="902" src="https://github.com/user-attachments/assets/86717e75-9176-4f1a-88cd-71fa94da0c0e">
+</video>
+
+在未安装uosc框架时，调用mpv内部的`mp.input`进行菜单渲染，具体效果见[此pr](https://github.com/Tony15246/uosc_danmaku/pull/24)
 
 ### 主要功能
-1. 从弹弹play的API获取剧集及弹幕数据，并根据用户选择的集数加载弹幕
+1. 从弹弹play或自定义服务的API获取剧集及弹幕数据，并根据用户选择的集数加载弹幕
 2. 通过点击uosc control bar中的弹幕搜索按钮可以显示搜索菜单供用户选择需要的弹幕
 3. 通过点击加入uosc control bar中的弹幕开关控件可以控制弹幕的开关
 4. 通过点击加入uosc control bar中的[从源获取弹幕](#从弹幕源向当前弹幕添加新弹幕内容可选)按钮可以通过受支持的网络源添加弹幕
 5. 记忆型全自动弹幕填装，在为某个文件夹下的某一集番剧加载过一次弹幕后，加载过的弹幕会自动关联到该集；之后每次重新播放该文件就会自动加载弹幕，同时该文件对应的文件夹下的所有其他集数的文件都会在播放时自动加载弹幕，无需再重复手动输入番剧名进行搜索（注意⚠️：全自动弹幕填装默认关闭，如需开启请阅读[auto_load配置项说明](#auto_load)）
-6. 在没有手动加载过弹幕，没有填装记自动弹幕忆之前，通过文件哈希匹配的方式自动添加弹幕（仅限本地文件），对于能够哈希匹配关联的文件不再需要手动搜索关联，实现全自动加载弹幕并添加记忆。该功能随记忆型全自动弹幕填装功能一起开启（哈希匹配自动加载准确率较低，如关联到错误的剧集请手动加载正确的剧集）
+6. 在没有手动加载过弹幕，没有填装自动弹幕记忆之前，通过文件哈希匹配的方式自动添加弹幕（仅限本地文件），对于能够哈希匹配关联的文件不再需要手动搜索关联，实现全自动加载弹幕并添加记忆。该功能随记忆型全自动弹幕填装功能一起开启（哈希匹配自动加载准确率较低，如关联到错误的剧集请手动加载正确的剧集）
 7. 通过打开配置项load_more_danmaku可以爬取所有可用弹幕源，获取更多弹幕（注意⚠️：爬取所有可用弹幕源默认关闭，如需开启请阅读[load_more_danmaku配置项说明](#load_more_danmaku)）
 8. 自动记忆弹幕开关情况，播放视频时保持上次关闭时的弹幕开关状态
 9. 自定义弹幕样式（具体设置方法详见[自定义弹幕样式](#DanmakuFactory相关配置自定义弹幕样式相关配置)）
 
 无需亲自下载整合弹幕文件资源，无需亲自处理文件格式转换，在mpv播放器中一键加载包含了哔哩哔哩、巴哈姆特等弹幕网站弹幕的弹弹play的动画弹幕。
 
-插件本身支持Linux和Windows平台。项目依赖于[uosc UI框架](https://github.com/tomasklaen/uosc)。欲使用本插件必须在mpv播放器中安装有uosc。uosc的安装步骤可以参考其[官方安装教程](https://github.com/tomasklaen/uosc?tab=readme-ov-file#install)。当然，如果使用[MPV_lazy](https://github.com/hooke007/MPV_lazy)等内置了uosc的懒人包则只需安装本插件即可。
+插件本身支持Linux和Windows平台。项目依赖于[uosc UI框架](https://github.com/tomasklaen/uosc)。欲使用本插件强烈建议为mpv播放器中安装uosc。uosc的安装步骤可以参考其[官方安装教程](https://github.com/tomasklaen/uosc?tab=readme-ov-file#install)。当然，如果使用[MPV_lazy](https://github.com/hooke007/MPV_lazy)等内置了uosc的懒人包则只需安装本插件即可。
 
 另外本插件也使用了DanmakuFactory弹幕格式转换工具。在Windows平台上本插件调用DanmakuFactory官方release版的DanmakuFactory.exe文件，在Linux平台上本插件调用基于作者自己Linux系统编译的二进制文件。如果本项目仓库中bin文件夹下提供的可执行文件无法正确运行，请前往[DanmakuFactory项目地址](https://github.com/hihkm/DanmakuFactory)，按照其教程选择或编译兼容自己环境的可执行文件。
 
@@ -122,6 +130,8 @@ show_danmaku_keyboard_key=i
 
 #### 从弹幕源向当前弹幕添加新弹幕内容（可选）
 
+从弹幕源添加弹幕。在已经在播放弹幕的情况下会将添加的弹幕追加到现有弹幕中。
+
 此功能尚为实验性功能，目前尚未解决弹幕去重等问题。
 
 可添加的弹幕源如哔哩哔哩上任意视频通过video路径加BV号，或者巴哈姆特上的视频地址等。比如说以下地址均可作为有效弹幕源被添加：
@@ -139,7 +149,35 @@ https://ani.gamer.com.tw/animeVideo.php?sn=36843
 Ctrl+j script-message open_add_source_menu
 ```
 
+现已添加了对加载本地弹幕文件的支持，输入本地弹幕文件的绝对路径即可使用本插件加载弹幕。加载出来的弹幕样式同在本插件中设置的弹幕样式。支持的文件格式有ass文件和xml文件。具体可参见[此issue](https://github.com/Tony15246/uosc_danmaku/issues/26)
+
+```
+#Linux下示例
+/home/tony/Downloads/example.xml
+#Windows下示例
+C:\Users\Tony\Downloads\example.xml
+```
+
 ## 配置选项（可选）
+
+### api_server
+
+#### 功能说明
+
+允许自定义弹幕 API 的服务地址
+
+> [!NOTE]
+>
+> 请确保自定义服务的 API 与弹弹play 的兼容，已知兼容：[anoraker/abetsy](https://hub.docker.com/repository/docker/anoraker/abetsy)
+
+#### 使用方法
+
+想要使用此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并自定义如下内容：
+
+```
+api_server=https://api.dandanplay.net
+```
+
 
 ### load_more_danmaku
 
@@ -210,19 +248,56 @@ auto_load=yes
 autoload_local_danmaku=yes
 ```
 
-### save_hash_match
+### autoload_for_url
 
 #### 功能说明
 
-保存哈希匹配的关联结果。启用时可以避免同番剧剧集的反复哈希匹配；禁用时始终进行哈希匹配（仅当同目录从未执行过手动搜索）
-可以应对边缘案例：同目录存在同一番剧的 OVA 和 MOVIE；同一番剧的剧集文件命名格式不同；同目录存在多个不同番剧。在这些情况下这些命名特殊无法获取到正确剧集数的文件可以通过保存哈希匹配结果加载其对应的弹幕。
+为可能支持的 url 视频文件实现弹幕关联记忆和继承，配合播放列表食用效果最佳
+
+目前的具体支持情况和实现效果可以参考[此pr](https://github.com/Tony15246/uosc_danmaku/pull/16)
+
+> [!NOTE]
+>
+> 实验性功能，尚不完善
 
 #### 使用方法
 
 想要开启此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并添加如下内容：
 
 ```
-save_hash_match=yes
+autoload_for_url=yes
+```
+
+### user_agent
+
+#### 功能说明
+
+自定义`curl`发送网络请求时使用的 User Agent，默认值是`mpv_danmaku/1.0`
+
+#### 使用方法
+
+想要使用此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并自定义如下内容（不可为空）：
+
+> [!NOTE]
+>
+> User-Agent格式必须符合弹弹play的标准，否则无法成功请求。具体格式要求见[弹弹play官方文档](https://github.com/kaedei/dandanplay-libraryindex/blob/master/api/OpenPlatform.md#5user-agent)
+
+```
+user_agent=mpv_danmaku/1.0
+```
+
+### proxy
+
+#### 功能说明
+
+自定义`curl`发送网络请求时使用的代理，默认禁用
+
+#### 使用方法
+
+想要使用此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并自定义如下内容：
+
+```
+proxy=127.0.0.1:7890
 ```
 
 ### DanmakuFactory_Path
@@ -230,52 +305,68 @@ save_hash_match=yes
 #### 功能说明
 
 指定 DanmakuFactory 程序的路径，支持绝对路径和相对路径
-不特殊指定或者留空（默认值）会在脚本同目录的 bin 中查找，调用本人构建好的DanmakuFactory可执行文件
-示例：DanmakuFactory_Path = 'DanmakuFactory' 会在环境变量 PATH 中或 mpv 程序旁查找该程序
+不特殊指定或者留空（默认值）会在脚本同目录的 bin 中查找，调用本人构建好的 DanmakuFactory 可执行文件
+示例：`DanmakuFactory_Path=DanmakuFactory` 会在环境变量 PATH 中或 mpv 程序旁查找该程序
 
 #### 使用示例
 
+想要配置此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并添加类似如下内容：
+
 ```
-DanmakuFactory_Path="/path/to/your/DanmakuFactory"
+DanmakuFactory_Path=/path/to/your/DanmakuFactory
 ```
 
 ### history_path
 
 #### 功能说明
 
-指定弹幕关联历史记录文件的路径，支持绝对路径和相对路径。默认值是`"~~/danmaku-history.json"`也就是mpv配置文件夹的根目录下
+指定弹幕关联历史记录文件的路径，支持绝对路径和相对路径。默认值是`~~/danmaku-history.json`也就是mpv配置文件夹的根目录下
 
 #### 使用示例
 
+想要配置此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并添加类似如下内容：
+
 ```
-history_path="/path/to/your/danmaku-history.json"
+history_path=/path/to/your/danmaku-history.json
 ```
 
 ### DanmakuFactory相关配置（自定义弹幕样式相关配置）
 
 默认配置如下，可根据需求更改并自定义弹幕样式
 
+想要配置此选项，请在mpv配置文件夹下的`script-opts`中创建`uosc_danmaku.conf`文件并添加类似如下内容：
+
 ```
 #分辨率
-resolution="1920 1080"
+resolution=1920 1080
 #速度
-scrolltime="12"
+scrolltime=12
 #字体
-fontname="sans-serif"
+fontname=sans-serif
 #大小 
-fontsize="50"
+fontsize=50
 #透明度(1-255)  255 为不透明
-opacity="150"
+opacity=150
 #阴影
-shadow="0"
+shadow=0
 #粗体 true false
-bold="true"
+bold=true
 #弹幕密度 整数(>=-1) -1：表示不重叠 0：表示无限制 其他表示限定条数
-density="0.0"
+density=0.0
 #全部弹幕的显示范围(0.0-1.0)
-displayarea="0.85"
+displayarea=0.85
 #描边 0-4
-outline="1"
+outline=1
+#指定不会显示在屏幕上的弹幕类型。使用“-”连接类型名称，例如“L2R-TOP-BOTTOM”。可用的类型包括：L2R,R2L,TOP,BOTTOM,SPECIAL,COLOR,REPEAT
+blockmode= 
 #指定弹幕屏蔽词文件路径(black.txt)，支持绝对路径和相对路径。文件内容以换行分隔
-blacklist_path=""
+blacklist_path=
 ```
+
+## 常见问题
+
+### 我在Windows平台上使用此插件，总是会显示“未找到弹幕文件”
+
+可能是Windows系统的病毒威胁与保护误查杀了本插件使用的DanmakuFactory.exe，把DanmakuFactory.exe当成了病毒。找到下图中的界面还原DanmakuFactory.exe并允许此应用
+
+<img width="902" alt="image_2024-10-06_11-50-12" src="https://github.com/user-attachments/assets/ebcc1a37-0041-42ce-8afe-0e9c2899dd29">

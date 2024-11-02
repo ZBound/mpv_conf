@@ -14,8 +14,8 @@ MBTN_LEFT_DBL    ignore
 ```
 \portable_config\inputevent_key.conf 最底下加上这两行
 ```
-MBTN_LEFT       cycle pause;script-message-to uosc flash-pause-indicator  #@click
-MBTN_LEFT       cycle fullscreen                                         #@double_click
+MBTN_LEFT       cycle pause;script-message-to uosc flash-pause-indicator  #event:click
+MBTN_LEFT       cycle fullscreen                                          #event:double_click
 ```
 
 ## 感谢
